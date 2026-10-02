@@ -192,6 +192,185 @@ fieldset{padding:.35em .75em .625em}legend{box-sizing:border-box;color:inherit;d
   </footer>
 </div>
 
-<script>(function(){if(!document.getElementById("horizon"))return;var feeds={N:{feed:"North range",base:2140,wind:[14,"NW"],build:.72,moist:31,eta:15120,herd:"Herd B · 48 head",move:"C → Lee B",curve:[96,94,90,88,82,74,66,56,48,40,34,30,27]},E:{feed:"East range",base:2610,wind:[9,"N"],build:.41,moist:44,eta:30600,herd:"Herd A · 112 head",move:"Hold in E2",curve:[84,82,83,80,78,77,74,72,71,68,66,65,63]},S:{feed:"South range",base:1780,wind:[22,"W"],build:.88,moist:19,eta:6300,herd:"Herd D · 67 head",move:"S4 → Gully",curve:[100,92,80,74,60,52,40,36,28,24,20,18,16]},W:{feed:"West range",base:3050,wind:[6,"SW"],build:.18,moist:52,eta:54e3,herd:"Herd C · 29 head",move:"No move",curve:[70,71,69,70,68,69,66,67,65,64,64,62,61]}};var state={range:"N",eta:feeds.N.eta,hold:false,scan:false,entry:""};var reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;function out(name,text){document.querySelectorAll('[data-out="'+name+'"]').forEach(function(el){el.textContent=text})}function pad(n){return String(n).padStart(2,"0")}function hms(s){return pad(Math.floor(s/3600))+":"+pad(Math.floor(s%3600/60))+":"+pad(s%60)}var horizon=document.getElementById("horizon");var gain=document.getElementById("gain");var curve=document.getElementById("curve");var picture=document.getElementById("main-picture");function drawCurve(){var pts=feeds[state.range].curve;var n=Math.max(2,Math.round(pts.length*horizon.value/12));var d="";for(var i=0;i<n;i++){d+=(i?" L":"M")+(12+i*216/(n-1)).toFixed(1)+" "+pts[i]}curve.setAttribute("d",d);out("horizon",horizon.value)}function setRange(key){var f=feeds[key];state.range=key;state.eta=f.eta;out("feed",f.feed);out("base",f.base.toLocaleString("en-US"));out("wind",f.wind[0]+" kt "+f.wind[1]);out("build",f.build.toFixed(2));out("moist",f.moist);out("herd",f.herd);out("move",f.move);out("eta",hms(state.eta));document.getElementById("moist-bar").style.width=f.moist+"%";document.querySelectorAll("[data-range][aria-pressed]").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.range===key))});drawCurve()}function setGain(){picture.style.filter="brightness("+gain.value/100+") contrast("+(.8+gain.value/500)+")"}function showEntry(){out("entry",state.entry?"PDK "+(state.entry+"_").slice(0,2):"PDK __ · Key no. + ENT")}function lookup(){if(!state.entry)return;var n=parseInt(state.entry,10);var head=12+n*37%90;var hour=11+n%7;out("entry","PDK "+pad(n)+" · "+head+" head · By "+pad(hour)+":"+pad(n*13%60));state.entry=""}document.addEventListener("click",function(e){var btn=e.target.closest("button");if(!btn)return;if(btn.dataset.range){setRange(btn.dataset.range)}if(btn.dataset.key){var k=btn.dataset.key;if(k==="ent"){lookup()}else{state.entry=k==="clr"?"":(state.entry+k).slice(-2);showEntry()}}if(btn.dataset.nudge){var parts=btn.dataset.nudge.split(":");var input=parts[0]==="gain"?gain:horizon;input.value=Number(input.value)+Number(parts[1]);input.dispatchEvent(new Event("input"))}if(btn.id==="hold"||btn.id==="scan"){var on=btn.getAttribute("aria-pressed")!=="true";btn.setAttribute("aria-pressed",String(on));state[btn.id]=on;out("state",state.hold?"Hold":state.scan?"Scan":"Live")}});horizon.addEventListener("input",drawCurve);gain.addEventListener("input",setGain);function clock(){var d=new Date;out("clock",pad(d.getUTCHours())+":"+pad(d.getUTCMinutes())+":"+pad(d.getUTCSeconds()))}var order=["N","E","S","W"];var beat=0;function tick(){if(state.hold)return;beat++;clock();if(state.eta>0){state.eta--;out("eta",hms(state.eta))}if(state.scan&&beat%4===0){setRange(order[(order.indexOf(state.range)+1)%4])}else if(beat%3===0){var f=feeds[state.range];out("wind",f.wind[0]+Math.round(Math.random()*2-1)+" kt "+f.wind[1]);out("base",(f.base+Math.round(Math.random()*6-3)*10).toLocaleString("en-US"))}}setRange("N");setGain();if(!reduce){clock();setInterval(tick,1e3)}})();</script>
-</body>
+<script>
+(function () {
+  var horizon = document.getElementById('horizon');
+  if (!horizon) return;
+
+  var feeds = {
+    N: { channel: '01', feed: 'North range', base: 2140, wind: [14, 'NW'], build: 0.72, moist: 31, eta: 15120, herd: 'Herd B · 48 head', move: 'C → Lee B', alert: 'Front inbound', advisory: 'North range: move Herd B to Lee B before the front reaches the ridge.', position: '62% 70%', curve: [96, 94, 90, 88, 82, 74, 66, 56, 48, 40, 34, 30, 27] },
+    E: { channel: '02', feed: 'East range', base: 2610, wind: [9, 'N'], build: 0.41, moist: 44, eta: 30600, herd: 'Herd A · 112 head', move: 'Hold in E2', alert: 'Watch conditions', advisory: 'East range: Herd A can stay in E2. Check again as the cloud base lowers.', position: '78% 65%', curve: [84, 82, 83, 80, 78, 77, 74, 72, 71, 68, 66, 65, 63] },
+    S: { channel: '03', feed: 'South range', base: 1780, wind: [22, 'W'], build: 0.88, moist: 19, eta: 6300, herd: 'Herd D · 67 head', move: 'S4 → Gully', alert: 'Move now', advisory: 'South range: move Herd D from S4 to Gully. The front is close.', position: '44% 72%', curve: [100, 92, 80, 74, 60, 52, 40, 36, 28, 24, 20, 18, 16] },
+    W: { channel: '04', feed: 'West range', base: 3050, wind: [6, 'SW'], build: 0.18, moist: 52, eta: 54000, herd: 'Herd C · 29 head', move: 'No move', alert: 'Range clear', advisory: 'West range: no move needed. Keep the herd where it is.', position: '23% 70%', curve: [70, 71, 69, 70, 68, 69, 66, 67, 65, 64, 64, 62, 61] }
+  };
+  var order = ['N', 'E', 'S', 'W'];
+  var storageKey = 'grisaseo:console';
+  var state = { range: 'N', eta: feeds.N.eta, hold: false, scan: false, entry: '', beat: 0 };
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var consoleRoot = document.getElementById('console');
+  var gain = document.getElementById('gain');
+  var curve = document.getElementById('curve');
+  var picture = document.getElementById('main-picture');
+  var holdButton = document.getElementById('hold');
+  var scanButton = document.getElementById('scan');
+  var resetButton = document.getElementById('reset-console');
+
+  function out(name, text) {
+    document.querySelectorAll('[data-out="' + name + '"]').forEach(function (element) { element.textContent = text; });
+  }
+  function pad(number) { return String(number).padStart(2, '0'); }
+  function hms(seconds) { return pad(Math.floor(seconds / 3600)) + ':' + pad(Math.floor(seconds % 3600 / 60)) + ':' + pad(seconds % 60); }
+  function clamp(number, min, max) { return Math.max(min, Math.min(max, number)); }
+  function save() {
+    try { localStorage.setItem(storageKey, JSON.stringify({ range: state.range, horizon: Number(horizon.value), gain: Number(gain.value) })); } catch (_) {}
+  }
+  function readSaved() {
+    try {
+      var saved = JSON.parse(localStorage.getItem(storageKey) || '{}');
+      if (feeds[saved.range]) state.range = saved.range;
+      if (Number.isFinite(saved.horizon)) horizon.value = clamp(saved.horizon, 2, 12);
+      if (Number.isFinite(saved.gain)) gain.value = clamp(saved.gain, 60, 140);
+    } catch (_) {}
+  }
+  function drawCurve() {
+    var points = feeds[state.range].curve;
+    var count = Math.max(2, Math.round(points.length * Number(horizon.value) / 12));
+    var path = '';
+    for (var i = 0; i < count; i++) path += (i ? ' L' : 'M') + (12 + i * 216 / (count - 1)).toFixed(1) + ' ' + points[i];
+    curve.setAttribute('d', path);
+    out('horizon', horizon.value);
+    horizon.setAttribute('aria-valuetext', horizon.value + ' hours');
+  }
+  function status() {
+    out('state', state.hold ? 'Hold' : state.scan ? 'Scan · ' + state.range : 'Live · ' + state.range);
+    holdButton.setAttribute('aria-pressed', String(state.hold));
+    scanButton.setAttribute('aria-pressed', String(state.scan));
+  }
+  function setRange(key) {
+    var feed = feeds[key];
+    if (!feed) return;
+    state.range = key;
+    state.eta = feed.eta;
+    out('channel', feed.channel);
+    out('feed', feed.feed);
+    out('base', feed.base.toLocaleString('en-US'));
+    out('wind', feed.wind[0] + ' kt ' + feed.wind[1]);
+    out('build', feed.build.toFixed(2));
+    out('moist', feed.moist);
+    out('herd', feed.herd);
+    out('move', feed.move);
+    out('eta', hms(state.eta));
+    out('alert', feed.alert);
+    out('advisory', feed.advisory);
+    picture.style.objectPosition = feed.position;
+    document.getElementById('moist-bar').style.width = feed.moist + '%';
+    document.querySelectorAll('[data-range][aria-pressed]').forEach(function (button) {
+      button.setAttribute('aria-pressed', String(button.dataset.range === key));
+    });
+    drawCurve();
+    status();
+    save();
+  }
+  function setGain() {
+    picture.style.filter = 'brightness(' + Number(gain.value) / 100 + ') contrast(' + (0.8 + Number(gain.value) / 500) + ')';
+    out('gain', gain.value);
+    gain.setAttribute('aria-valuetext', gain.value + ' percent');
+    save();
+  }
+  function showEntry() {
+    out('entry', state.entry ? 'PDK ' + (state.entry + '_').slice(0, 2) : 'PDK __ · Key no. + ENT');
+  }
+  function lookup() {
+    if (!state.entry) { out('entry', 'Enter a paddock number, then ENT'); return; }
+    var number = parseInt(state.entry, 10);
+    var head = 12 + number * 37 % 90;
+    var hour = 11 + number % 7;
+    out('entry', 'PDK ' + pad(number) + ' · ' + head + ' head · By ' + pad(hour) + ':' + pad(number * 13 % 60));
+    state.entry = '';
+  }
+  function enterKey(key) {
+    if (key === 'ent') lookup();
+    else { state.entry = key === 'clr' ? '' : (state.entry + key).slice(-2); showEntry(); }
+  }
+  function nudge(type, amount) {
+    var input = type === 'gain' ? gain : horizon;
+    input.value = clamp(Number(input.value) + amount, Number(input.min), Number(input.max));
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  function setHold(on) { state.hold = on; status(); }
+  function setScan(on) {
+    state.scan = on;
+    if (on && !state.hold) setRange(order[(order.indexOf(state.range) + 1) % 4]);
+    status();
+  }
+  function reset() {
+    state.hold = false;
+    state.scan = false;
+    state.entry = '';
+    horizon.value = 6;
+    gain.value = 100;
+    try { localStorage.removeItem(storageKey); } catch (_) {}
+    setRange('N');
+    setGain();
+    showEntry();
+    resetButton.focus({ preventScroll: true });
+  }
+  function clock() {
+    var date = new Date();
+    out('clock', pad(date.getUTCHours()) + ':' + pad(date.getUTCMinutes()) + ':' + pad(date.getUTCSeconds()));
+  }
+  function tick() {
+    if (state.hold || document.hidden) return;
+    state.beat++;
+    clock();
+    if (state.eta > 0) { state.eta--; out('eta', hms(state.eta)); }
+    if (state.scan && state.beat % 4 === 0) setRange(order[(order.indexOf(state.range) + 1) % 4]);
+    else if (state.beat % 3 === 0) {
+      var feed = feeds[state.range];
+      out('wind', (feed.wind[0] + Math.round(Math.random() * 2 - 1)) + ' kt ' + feed.wind[1]);
+      out('base', (feed.base + Math.round(Math.random() * 6 - 3) * 10).toLocaleString('en-US'));
+    }
+  }
+
+  consoleRoot.addEventListener('click', function (event) {
+    var button = event.target.closest('button');
+    if (!button) return;
+    if (button.dataset.range) setRange(button.dataset.range);
+    if (button.dataset.key) enterKey(button.dataset.key);
+    if (button.dataset.nudge) {
+      var parts = button.dataset.nudge.split(':');
+      nudge(parts[0], Number(parts[1]));
+    }
+    if (button === holdButton) setHold(!state.hold);
+    if (button === scanButton) setScan(!state.scan);
+    if (button === resetButton) reset();
+  });
+  consoleRoot.addEventListener('keydown', function (event) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.target.matches('input, textarea, select, [contenteditable]')) return;
+    if (event.target.closest('button, a') && (event.key === 'Enter' || event.key === ' ')) return;
+    var key = event.key;
+    var functionRanges = { F1: 'N', F2: 'E', F3: 'S', F4: 'W' };
+    if (functionRanges[key]) setRange(functionRanges[key]);
+    else if (/^[0-9]$/.test(key)) enterKey(key);
+    else if (key === 'Enter') enterKey('ent');
+    else if (key === 'Backspace' || key === 'Delete') enterKey('clr');
+    else if (key.toLowerCase() === 'h') setHold(!state.hold);
+    else if (key.toLowerCase() === 's') setScan(!state.scan);
+    else if (key.toLowerCase() === 'r') reset();
+    else if (key === 'ArrowLeft') nudge('horizon', -1);
+    else if (key === 'ArrowRight') nudge('horizon', 1);
+    else if (key === 'ArrowUp') nudge('gain', 8);
+    else if (key === 'ArrowDown') nudge('gain', -8);
+    else return;
+    event.preventDefault();
+  });
+  horizon.addEventListener('input', function () { drawCurve(); save(); });
+  gain.addEventListener('input', setGain);
+  readSaved();
+  setRange(state.range);
+  setGain();
+  clock();
+  if (!reduce) setInterval(tick, 1000);
+})();
+</script></body>
 </html>
